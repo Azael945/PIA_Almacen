@@ -1,10 +1,19 @@
-#create database almacen;
+# create database almacen;
+
+# drop table almacen;
+# drop table movimiento;
+# drop table usuario;
+# drop table rol;
+# drop table producto;
+# drop table cliente;
+# drop table proveedor;
+# drop table categoria;
 
 use almacen;
 
 create table rol(
     id_rol int auto_increment primary key,
-    nombre varchar(50) not null unique,
+    nombre enum('Usuario', 'Admin', 'Editor') not null unique,
     descripcion varchar(255)
 ) engine = InnoDB default charset = utf8mb4;
 
