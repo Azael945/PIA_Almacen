@@ -7,7 +7,9 @@
 # drop table proveedor;
 # drop table categoria;
 
+
 use almacen;
+
 
 create table rol(
     id_rol int auto_increment primary key,
