@@ -12,6 +12,7 @@
   </component>
   <component name="DatabaseLocalColorSettings">
     <colors>
+      <entry key="83846a62-473b-470c-85d8-94fd6c95620f" value="" />
       <entry key="bdedc99f-37cd-45c5-b1c5-eaad3569b0c0" value="" />
     </colors>
   </component>
@@ -39,7 +40,7 @@
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/angel",
+    "last_opened_file_path": "C:/Users/angel/Desktop/PIA_Almacen",
     "settings.editor.selected.configurable": "database.query.execution"
   },
   "keyToStringList": {

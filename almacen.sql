@@ -1,6 +1,3 @@
-# create database almacen;
-
-
 # drop table almacen;
 # drop table movimiento;
 # drop table usuario;
@@ -9,7 +6,6 @@
 # drop table cliente;
 # drop table proveedor;
 # drop table categoria;
-
 
 use almacen;
 
