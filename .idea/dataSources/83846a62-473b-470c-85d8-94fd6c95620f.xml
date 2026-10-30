@@ -999,7 +999,7 @@ sys|schema||mysql.sys|localhost|TRIGGER|G</Grants>
       <AutoIntrospectionLevel>3</AutoIntrospectionLevel>
       <Current>1</Current>
       <LastIntrospectionLevel>3</LastIntrospectionLevel>
-      <LastIntrospectionLocalTimestamp>2026-10-29.15:59:29</LastIntrospectionLocalTimestamp>
+      <LastIntrospectionLocalTimestamp>2026-10-30.16:46:09</LastIntrospectionLocalTimestamp>
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </schema>
     <schema id="289" parent="1" name="information_schema">
@@ -1445,19 +1445,19 @@ sys|schema||mysql.sys|localhost|TRIGGER|G</Grants>
       <Position>5</Position>
       <StoredType>varchar(255)|0s</StoredType>
     </column>
-    <column id="383" parent="304" name="id_rol">
-      <Position>6</Position>
-      <StoredType>int|0s</StoredType>
-    </column>
-    <column id="384" parent="304" name="fecha_alta">
+    <column id="383" parent="304" name="fecha_alta">
       <DefaultExpression>CURRENT_TIMESTAMP</DefaultExpression>
-      <Position>7</Position>
+      <Position>6</Position>
       <StoredType>datetime|0s</StoredType>
     </column>
-    <column id="385" parent="304" name="activo">
+    <column id="384" parent="304" name="activo">
       <DefaultExpression>1</DefaultExpression>
-      <Position>8</Position>
+      <Position>7</Position>
       <StoredType>tinyint(1)|0s</StoredType>
+    </column>
+    <column id="385" parent="304" name="id_rol">
+      <Position>8</Position>
+      <StoredType>int|0s</StoredType>
     </column>
     <foreign-key id="386" parent="304" name="usuario_ibfk_1">
       <ColNames>id_rol</ColNames>
