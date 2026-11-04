@@ -1,0 +1,4 @@
+En esta mision se tiene que hacer un GET, POST, PUT y DELETE, igualemnte al momento de eliminar un registro solamente se desactiva
+
+Tomen en cuenta un punto muy importante, al momento de agregar un registro la base de datos ya cuenta automaticamente el ID así que no es necesario que se meta manualmente
+las contrasenas se tiene que encriptar al anadirla a la base de dato

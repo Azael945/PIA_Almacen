@@ -39,7 +39,8 @@ create table cliente(
     id_cliente int auto_increment primary key,
     nombre varchar(100) not null,
     celular varchar(30),
-    correo varchar(100)
+    correo varchar(100),
+    activo boolean default true
 ) engine = InnoDB default charset = utf8mb4;
 
 
