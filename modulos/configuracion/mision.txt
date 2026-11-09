@@ -1,0 +1,3 @@
+En esta mision lo que se tiene que hacer es un GET, POST, PUT y DELETE un proveedor, categoria y clientes, ojo tomar en cuenta que no se eliminan de la base de datos
+solamente se tienen que aparecer como inactivos (en el caso de categoria no aplica ya que no maneja un estado activo)
+Tomen en cuenta un punto muy importante, al momento de agregar un registro la base de datos ya cuenta automaticamente el ID así que no es necesario que se meta manualmente

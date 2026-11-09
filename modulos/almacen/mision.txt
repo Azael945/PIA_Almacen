@@ -1,0 +1,2 @@
+En esta mision lo que se tiene que hacer es un despliegue de los productos que se encuentran en almacen, se tiene que mostrar el codigo, producto, fecha de alta, descripcion, categoria,
+stock actual y agregar un estado de stock que diga "En stock" si hay producto, si esta bajo de 5 diga "Stock bajo" y si de plano no hay que diga "Fuera de stock"

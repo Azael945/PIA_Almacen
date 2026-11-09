@@ -1,0 +1,6 @@
+En esta mision se tiene que gestionar los movimientos hechos por la empresa, se tiene que hacer un GET y un POST, para el POST debe pedir el tipo de movimiento se esta realizando si 
+es una entrada o es una salida, el poducto que va a entrar o salir, mostrar el stock actual (validando que no se pueda hacer movimientos si el stock es menos a lo solicitado), 
+el proveedor que lo surte, la cantidad y la fecha y hora de la operacion, para el GET se tiene que mostrar el ID de movimiento, tipo de movimiento, fecha y hora, codigo del producto,
+proveedor y la cantidad
+
+Tomen en cuenta un punto muy importante, al momento de realizar un movimiento la base de datos ya cuenta automaticamente el ID así que no es necesario que se meta manualmente
