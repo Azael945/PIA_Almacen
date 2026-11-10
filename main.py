@@ -9,7 +9,5 @@ app = FastAPI(
 )
 
 app.include_router(autenticacion_router)
-#almacen
 app.include_router(almacen_router)
-
 app.include_router(usuarios_router)
