@@ -20,3 +20,7 @@ def crear_token_acceso(datos: dict) -> str:
     expiracion = datetime.now(timezone.utc) + timedelta(minutes=MINUTOS_EXPIRACION)
     datos_a_codificar.update({"exp": expiracion})
     return jwt.encode(datos_a_codificar, LLAVE_SECRETA, algorithm=ALGORITMO)
+
+def encriptar_contrasena(plain_password: str) -> str:
+    # Genera el hash Bcrypt que se guarda en la base de datos.
+    return bcrypt.hashpw(plain_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
