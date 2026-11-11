@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from modulos.autenticacion.rutas import router as autenticacion_router
 from modulos.almacen.rutas import router as almacen_router
 from modulos.usuarios.rutas import router as usuarios_router
-from modulos.configuracion.rutas import router_proveedores, router_clientes
+from modulos.configuracion.rutas import router_proveedores, router_clientes, router_categorias
 
 app = FastAPI(
     title="API Almacen",
@@ -17,3 +17,4 @@ app.include_router(usuarios_router)
 #configuracion
 app.include_router(router_proveedores)
 app.include_router(router_clientes)
+app.include_router(router_categorias)

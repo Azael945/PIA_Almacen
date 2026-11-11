@@ -17,7 +17,6 @@ class ProveedorEntrada(BaseModel):
                 valor = valor.upper()
         return valor
 
-
 class ProveedorRespuesta(BaseModel):
     id_proveedor: int
     nombre: str
@@ -39,7 +38,6 @@ class ClienteEntrada(BaseModel):
     def limpiar_nombre(cls, valor):
         return valor.strip() if isinstance(valor, str) else valor
 
-
 class ClienteRespuesta(BaseModel):
     """Lo que la API DEVUELVE: todas las columnas de la tabla cliente."""
     id_cliente: int
@@ -47,3 +45,28 @@ class ClienteRespuesta(BaseModel):
     celular: Optional[str] = None
     correo: Optional[str] = None
     activo: bool
+
+
+
+class CategoriaEntrada(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=50, examples=["Lácteos"])
+    descripcion: Optional[str] = Field(None, max_length=255, examples=["Leche, quesos y yogures"])
+
+    @field_validator("nombre", "descripcion", mode="before")
+    @classmethod
+    def limpiar_texto(cls, valor):
+        if isinstance(valor, str):
+            valor = valor.strip()
+            return valor or None
+        return valor
+
+class CategoriaRespuesta(BaseModel):
+    """Lo que la API DEVUELVE: la categoría y cuántos productos la usan."""
+    id_categoria: int
+    nombre: str
+    descripcion: Optional[str] = None
+    total_productos: int
+
+class MoverProductos(BaseModel):
+    """A qué categoría se van los productos de la categoría origen."""
+    id_categoria_destino: int = Field(..., examples=[5])

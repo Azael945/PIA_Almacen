@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from database.conexion import obtener_db                     # conexión 
-from modulos.almacen.rutas import verificar_acceso_almacen   # Admin o Editor o ???client?
-from .esquemas import ProveedorEntrada, ProveedorRespuesta
-from .esquemas import ProveedorEntrada, ProveedorRespuesta, ClienteEntrada, ClienteRespuesta
+from modulos.almacen.rutas import verificar_acceso_almacen
+from modulos.usuarios.rutas import verificar_acceso_usuarios   
+from .esquemas import ProveedorEntrada, ProveedorRespuesta, ClienteEntrada, ClienteRespuesta, CategoriaEntrada, CategoriaRespuesta, MoverProductos
+
 
 router_proveedores = APIRouter( 
     prefix="/proveedores",
@@ -20,6 +21,12 @@ router_clientes = APIRouter(
     dependencies=[Depends(verificar_acceso_almacen)]   
 )
 
+router_categorias = APIRouter(
+    prefix="/categorias",
+    tags=["Categorías"],
+    dependencies=[Depends(verificar_acceso_almacen)]   # Admin o Editor para todo el router
+)
+
 
 SQL_PROVEEDOR = """
     SELECT id_proveedor, nombre, celular, correo, rfc, fecha_alta, activo
@@ -29,6 +36,13 @@ SQL_CLIENTE = """
     SELECT id_cliente, nombre, celular, correo, activo
     FROM cliente
 """
+SQL_CATEGORIA = """
+    SELECT c.id_categoria, c.nombre, c.descripcion,
+           COUNT(p.id_producto) AS total_productos
+    FROM categoria c
+    LEFT JOIN producto p ON p.id_categoria = c.id_categoria
+"""
+SQL_AGRUPAR = " GROUP BY c.id_categoria, c.nombre, c.descripcion"
 
 
 #PROVEEDORES
@@ -155,3 +169,95 @@ def eliminar_cliente(id_cliente: int, db: Session = Depends(obtener_db)):
     db.execute(text("UPDATE cliente SET activo = 0 WHERE id_cliente = :id"), {"id": id_cliente})
     db.commit()
     return {"mensaje": "Cliente dado de baja correctamente"}
+
+def buscar_categoria(db: Session, id_categoria: int, que: str = "la categoría"):
+    """Regresa la categoría con su conteo de productos o corta con 404."""
+    fila = db.execute(text(SQL_CATEGORIA + " WHERE c.id_categoria = :id" + SQL_AGRUPAR),
+                      {"id": id_categoria}).mappings().first()
+    if fila is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"No existe {que} con id {id_categoria}")
+    return fila
+
+def validar_nombre_unico(db: Session, nombre: str, id_categoria: int = 0):
+    """Regla de negocio: no hay dos categorías con el mismo nombre.
+    MySQL compara sin distinguir mayúsculas ni acentos: 'bebidas' = 'Bebidas'."""
+    existe = db.execute(
+        text("SELECT nombre FROM categoria WHERE nombre = :nombre AND id_categoria <> :id"),
+        {"nombre": nombre, "id": id_categoria}
+    ).first()
+    if existe:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Ya existe la categoría '{existe.nombre}'")
+
+
+
+# GET /categorias/
+@router_categorias.get("/", response_model=List[CategoriaRespuesta])
+def listar_categorias(db: Session = Depends(obtener_db)):
+    return db.execute(text(SQL_CATEGORIA + SQL_AGRUPAR + " ORDER BY c.nombre")).mappings().all()
+
+
+# GET /categorias/{id_categoria}
+@router_categorias.get("/{id_categoria}", response_model=CategoriaRespuesta)
+def obtener_categoria(id_categoria: int, db: Session = Depends(obtener_db)):
+    return buscar_categoria(db, id_categoria)
+
+
+# POST /categorias/
+@router_categorias.post("/", response_model=CategoriaRespuesta, status_code=status.HTTP_201_CREATED)
+def crear_categoria(categoria: CategoriaEntrada, db: Session = Depends(obtener_db)):
+    validar_nombre_unico(db, categoria.nombre)
+    resultado = db.execute(text("""
+        INSERT INTO categoria (nombre, descripcion)
+        VALUES (:nombre, :descripcion)
+    """), categoria.model_dump())
+    db.commit()
+    return buscar_categoria(db, resultado.lastrowid)
+
+
+# PUT /categorias/{id_categoria}
+@router_categorias.put("/{id_categoria}", response_model=CategoriaRespuesta)
+def actualizar_categoria(id_categoria: int, categoria: CategoriaEntrada, db: Session = Depends(obtener_db)):
+    buscar_categoria(db, id_categoria)
+    validar_nombre_unico(db, categoria.nombre, id_categoria)
+    db.execute(text("""
+        UPDATE categoria
+        SET nombre = :nombre, descripcion = :descripcion
+        WHERE id_categoria = :id
+    """), {**categoria.model_dump(), "id": id_categoria})
+    db.commit()
+    return buscar_categoria(db, id_categoria)
+
+
+# Mover todos los productos es el paso previo para poder borrar una categoría que tiene productos.
+@router_categorias.post("/{id_categoria}/mover-productos")
+def mover_productos(id_categoria: int, destino: MoverProductos, db: Session = Depends(obtener_db)):
+    if destino.id_categoria_destino == id_categoria:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="La categoría destino debe ser distinta a la de origen")
+    origen = buscar_categoria(db, id_categoria)
+    nueva = buscar_categoria(db, destino.id_categoria_destino, "la categoría destino")
+    resultado = db.execute(
+        text("UPDATE producto SET id_categoria = :destino WHERE id_categoria = :origen"),
+        {"destino": destino.id_categoria_destino, "origen": id_categoria}
+    )
+    db.commit()
+    return {"mensaje": f"Se movieron {resultado.rowcount} producto(s) de '{origen['nombre']}' a '{nueva['nombre']}'",
+            "productos_movidos": resultado.rowcount}
+
+
+# DELETE /categorias/{id_categoria}   (borrado real: solo Admin y solo si está vacía)
+@router_categorias.delete("/{id_categoria}", dependencies=[Depends(verificar_acceso_usuarios)])
+def eliminar_categoria(id_categoria: int, db: Session = Depends(obtener_db)):
+    categoria = buscar_categoria(db, id_categoria)
+    if categoria["total_productos"] > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(f"No se puede eliminar '{categoria['nombre']}': la usan "
+                    f"{categoria['total_productos']} producto(s). Muévelos primero a otra categoría "
+                    f"con POST /categorias/{id_categoria}/mover-productos")
+        )
+    db.execute(text("DELETE FROM categoria WHERE id_categoria = :id"), {"id": id_categoria})
+    db.commit()
+    return {"mensaje": f"Categoría '{categoria['nombre']}' eliminada"}
