@@ -1,25 +1,77 @@
-Instrucciones para la ejecucion del proyecto
+# API Almacén (PIA)
 
-1.- Abre el PowerShell en la carpeta del proyecto
+API REST para la gestión de un almacén: productos, proveedores, clientes, usuarios y movimientos de inventario (entradas y salidas con actualización automática de stock).
 
-2.- Crear el entorno vitual:    python -m venv venv
+**Tecnologías:** Python, FastAPI, Pydantic, SQLAlchemy, MySQL, JWT y bcrypt. Dependencias administradas con Poetry.
 
-3.- Activar el entorno vitual:  .\venv\Scripts\activate
+## Estructura
 
-4.- Instalar dependencias:      pip install fastapi uvicorn pydantic
+| Carpeta | Contenido |
+|---|---|
+| `main.py` | Punto de entrada; registra todos los routers |
+| `database/` | Conexión a MySQL (`conexion.py`) y script de tablas (`almacen.sql`) |
+| `modulos/autenticacion/` | Login y generación de tokens JWT |
+| `modulos/usuarios/` | CRUD de usuarios (solo Admin) |
+| `modulos/configuracion/` | CRUD de proveedores, clientes y categorías |
+| `modulos/almacen/` | Despliegue de productos con estado de stock |
+| `modulos/movimientos/` | Entradas y salidas de mercancía; actualiza el stock |
 
-5.- Ejecutar el servidor:       uvicorn main:app --reload
+## Requisitos
+- Python 3.10 o superior
+- MySQL Server 8 o superior
+- Poetry (`python -m pip install poetry`)
 
-6.- Ingresar en navegador web:  http://127.0.0.1:8000/docs
+## Instalación
 
-Procesos que se a estado realizando
+**1. Base de datos.** En MySQL Workbench:
+```sql
+CREATE DATABASE almacen;
+```
+Después ejecuta el script `database/almacen.sql` e inserta los roles:
+```sql
+use almacen;
+INSERT INTO rol (nombre, descripcion) VALUES
+('Admin', 'Administrador'), ('Editor', 'Editor'), ('Usuario', 'Usuario');
+```
 
-Librería argon2-cffi no deja porque no es compatible con la versión preliminar de Python
+**2. Variables de entorno.** Copia `.env.example` a un archivo nuevo llamado `.env` (en la raíz) y llena tus datos:
+```
+DB_USER=root
+DB_PASSWORD=tu_contraseña_de_mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=almacen
+JWT_SECRET_KEY=una_llave_larga_y_aleatoria
+```
+Genera la llave JWT con:
+```powershell
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+El archivo `.env` **no se sube a GitHub**; cada integrante crea el suyo.
 
-Para la tipo de encriptación se tuvo que utilizar la librería pip install passlib bcrypt 
+**3. Dependencias.** En la carpeta del proyecto:
+```powershell
+python -m poetry config virtualenvs.in-project true
+python -m poetry install
+```
 
-Instalamos pip install sqlalchemy pymysql para la conexión de la base de datos
+**4. Usuario Admin.** Genera el hash de tu contraseña:
+```powershell
+python -m poetry run python -c "import bcrypt; print(bcrypt.hashpw(b'TuContrasena', bcrypt.gensalt()).decode())"
+```
+E insértalo en MySQL, pegando el hash:
+```sql
+INSERT INTO usuario (nombre, celular, correo, contrasena, id_rol)
+VALUES ('Admin', '8112345678', 'admin@almacen.com', 'PEGA_AQUI_EL_HASH',
+        (SELECT id_rol FROM rol WHERE nombre = 'Admin'));
+```
 
-Se instalara pip install email-validator para validar que el formato del correo sea valido
+## Ejecución
+```powershell
+python -m poetry run uvicorn main:app --reload
+```
+Abre `http://127.0.0.1:8000/docs`, inicia sesión en `POST /auth/login`, copia el token y pégalo en el botón **Authorize**.
 
-Descargar pip install pyjwt
+## Notas del equipo
+- Se usa `bcrypt` para las contraseñas porque `argon2-cffi` no era compatible con la versión de Python utilizada.
+- Los borrados de proveedores, clientes y usuarios son lógicos (se marcan como inactivos).
