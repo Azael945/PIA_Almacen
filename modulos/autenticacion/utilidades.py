@@ -1,10 +1,22 @@
+import os
 from datetime import datetime, timedelta, timezone
+
 import bcrypt
 import jwt
+from dotenv import load_dotenv
 
-LLAVE_SECRETA = "mi_clave_secreta_almacen_2026"
-ALGORITMO = "HS256"
-MINUTOS_EXPIRACION = 60
+# Lee las variables del archivo .env (que NO se sube a GitHub)
+load_dotenv()
+
+LLAVE_SECRETA = os.getenv("JWT_SECRET_KEY")
+if not LLAVE_SECRETA:
+    raise RuntimeError(
+        "Falta la variable JWT_SECRET_KEY. Agrégala al archivo .env "
+        "(genera una con: python -c \"import secrets; print(secrets.token_hex(32))\")."
+    )
+
+ALGORITMO = os.getenv("JWT_ALGORITMO", "HS256")
+MINUTOS_EXPIRACION = int(os.getenv("JWT_MINUTOS_EXPIRACION", "60"))
 
 def verificar_contrasena(plain_password: str, password_db: str) -> bool:
     # Compara la contraseña plana enviada con el hash Bcrypt de MySQL.
