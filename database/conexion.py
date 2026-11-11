@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # Ajusta tu usuario, contraseña local, host y puerto de MySQL
-DATABASE_URL = f"mysql+pymysql://root:ANZ3298r4g65@localhost:3306/almacen"
+DATABASE_URL = f"mysql+pymysql://root:123456@localhost:3307/almacen"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
