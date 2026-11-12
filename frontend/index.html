@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Almacén · Panel</title>
+<style>
+  /* Estilos sencillos: un panel con pestañas */
+  :root { --azul:#1d5fa6; --azul-claro:#e3edf8; --gris:#5b6778; --borde:#d5dbe4; --fondo:#f3f5f8;
+          --verde:#2f7a4d; --verde-claro:#e4f3ea; --ambar:#8a5a00; --ambar-claro:#fbf1dc; --rojo:#b3412e; --rojo-claro:#fbe9e5; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui, "Segoe UI", sans-serif; background:var(--fondo); color:#18212e; }
+  header { background:#fff; border-bottom:1px solid var(--borde); padding:12px 20px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  header h1 { font-size:18px; margin:0 auto 0 0; }
+  header input { width:210px; max-width:100%; }
+  @media (max-width:600px) { main { padding:12px; } .tarjeta { padding:14px; } }
+  main { max-width:1100px; margin:0 auto; padding:20px; display:grid; gap:16px; }
+  main > *, #vistaPanel > * { min-width:0; }
+  .tarjeta { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:18px; }
+  h2 { font-size:17px; margin:0 0 12px; }
+  label { display:grid; gap:4px; font-size:13px; color:var(--gris); }
+  input, select { font:inherit; padding:7px 9px; border:1px solid var(--borde); border-radius:6px; background:#fff; color:#18212e; }
+  button { font:inherit; padding:7px 14px; border-radius:6px; border:1px solid var(--azul); background:var(--azul); color:#fff; cursor:pointer; }
+  button.sec { background:#fff; color:var(--azul); }
+  button.peligro { background:#fff; color:var(--rojo); border-color:var(--rojo); padding:3px 10px; font-size:13px; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid var(--azul); outline-offset:1px; }
+  .fila { display:flex; flex-wrap:wrap; gap:10px; align-items:end; }
+  .fila > label { flex:1 1 160px; }
+  nav { display:flex; flex-wrap:wrap; gap:6px; }
+  nav button { background:#fff; color:#18212e; border-color:var(--borde); }
+  nav button.activa { background:var(--azul); color:#fff; border-color:var(--azul); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--borde); }
+  th { font-size:12px; text-transform:uppercase; color:var(--gris); background:var(--azul-claro); }
+  .tabla { overflow-x:auto; margin-top:12px; }
+  .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; }
+  .ok { background:var(--verde-claro); color:var(--verde); }
+  .bajo { background:var(--ambar-claro); color:var(--ambar); }
+  .fuera, .baja { background:var(--rojo-claro); color:var(--rojo); }
+  #mensaje { display:none; border-radius:8px; padding:10px 14px; font-size:14px; }
+  #mensaje.exito { display:block; background:var(--verde-claro); color:var(--verde); border:1px solid var(--verde); }
+  #mensaje.error { display:block; background:var(--rojo-claro); color:var(--rojo); border:1px solid var(--rojo); }
+  .codigo { font-family:ui-monospace, monospace; font-weight:700; margin-right:6px; }
+  .ayuda { font-size:13px; color:var(--gris); margin:8px 0 0; }
+  .resultado { margin-top:12px; padding:12px; border-radius:8px; background:var(--azul-claro); font-size:15px; }
+  .oculto { display:none !important; }
+  .rapidos { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Almacén · Panel de pruebas</h1>
+  <label>Dirección de la API <input id="apiUrl" value="http://127.0.0.1:8000"></label>
+  <span id="sesion" class="oculto"></span>
+  <button id="btnSalir" class="sec oculto" type="button">Cerrar sesión</button>
+</header>
+
+<main>
+  <!-- Aquí se muestra la respuesta de cada petición: código HTTP + mensaje de la API -->
+  <div id="mensaje" role="status" aria-live="polite"></div>
+
+  <!-- 1. LOGIN: se ve solo mientras no haya token -->
+  <section id="vistaLogin" class="tarjeta">
+    <h2>Iniciar sesión</h2>
+    <form id="formLogin" class="fila">
+      <label>Correo <input id="correo" type="email" required value="eva@almacen.com"></label>
+      <label>Contraseña <input id="contrasena" type="password" required value="Password123!"></label>
+      <button type="submit">Entrar</button>
+    </form>
+    <div class="rapidos">
+      <span class="ayuda" style="margin:0 6px 0 0">Usuarios de prueba:</span>
+      <button class="sec" type="button" data-correo="angel@almacen.com">Angel (Admin)</button>
+      <button class="sec" type="button" data-correo="eva@almacen.com">Eva (Editor)</button>
+      <button class="sec" type="button" data-correo="ulises@almacen.com">Ulises (Usuario)</button>
+      <button class="sec" type="button" data-correo="rosa@almacen.com">Rosa (de baja)</button>
+    </div>
+  </section>
+
+  <!-- 2. PANEL: se ve cuando ya hay token -->
+  <section id="vistaPanel" class="oculto" style="display:grid;gap:16px">
+    <nav aria-label="Secciones">
+      <button type="button" data-tab="inventario" class="activa">Inventario</button>
+      <button type="button" data-tab="movimiento">Registrar movimiento</button>
+      <button type="button" data-tab="historial">Historial</button>
+      <button type="button" data-tab="proveedores">Proveedores</button>
+      <button type="button" data-tab="clientes">Clientes</button>
+      <button type="button" data-tab="categorias">Categorías</button>
+    </nav>
+
+    <!-- Inventario: GET /almacen/despliegue -->
+    <div id="tab-inventario" class="tarjeta">
+      <h2>Inventario</h2>
+      <button class="sec" type="button" onclick="cargarInventario()">Actualizar</button>
+      <div class="tabla"><table><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>Estado</th></tr></thead><tbody id="tInventario"></tbody></table></div>
+    </div>
+
+    <!-- Movimiento: POST /movimientos/  (el proceso central) -->
+    <div id="tab-movimiento" class="tarjeta oculto">
+      <h2>Registrar entrada o salida</h2>
+      <form id="formMovimiento" class="fila">
+        <label>Tipo
+          <select id="mTipo"><option value="Salida">Salida (venta a cliente)</option><option value="Entrada">Entrada (compra a proveedor)</option></select>
+        </label>
+        <label>Id del producto <input id="mProducto" type="number" min="1" required value="1"></label>
+        <label>Cantidad <input id="mCantidad" type="number" min="1" required value="10"></label>
+        <label id="lblCliente">Cliente <select id="mCliente"></select></label>
+        <label id="lblProveedor" class="oculto">Proveedor <select id="mProveedor"></select></label>
+        <label>Descripción <input id="mDescripcion" placeholder="Opcional"></label>
+        <button type="submit">Registrar</button>
+      </form>
+      <p class="ayuda">En los datos de prueba el id coincide con el código: P-001 = 1, P-002 = 2 … P-009 = 9.</p>
+      <div id="mResultado" class="resultado oculto"></div>
+    </div>
+
+    <!-- Historial: GET /movimientos/ -->
+    <div id="tab-historial" class="tarjeta oculto">
+      <h2>Historial de movimientos</h2>
+      <div class="fila">
+        <label>Tipo <select id="hTipo"><option value="">Todos</option><option>Entrada</option><option>Salida</option></select></label>
+        <button class="sec" type="button" onclick="cargarHistorial()">Buscar</button>
+      </div>
+      <div class="tabla"><table><thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Proveedor o cliente</th><th>Registró</th></tr></thead><tbody id="tHistorial"></tbody></table></div>
+    </div>
+
+    <!-- Proveedores: GET, POST y DELETE /proveedores/ -->
+    <div id="tab-proveedores" class="tarjeta oculto">
+      <h2>Proveedores</h2>
+      <form id="formProveedor" class="fila">
+        <label>Nombre <input id="pNombre" required></label>
+        <label>Celular (10 dígitos) <input id="pCelular" required></label>
+        <label>Correo <input id="pCorreo" required></label>
+        <label>RFC <input id="pRfc" required></label>
+        <button type="submit">Agregar</button>
+      </form>
+      <div class="tabla"><table><thead><tr><th>Id</th><th>Nombre</th><th>RFC</th><th>Celular</th><th>Estado</th><th></th></tr></thead><tbody id="tProveedores"></tbody></table></div>
+    </div>
+
+    <!-- Clientes: GET, POST y DELETE /clientes/ -->
+    <div id="tab-clientes" class="tarjeta oculto">
+      <h2>Clientes</h2>
+      <form id="formCliente" class="fila">
+        <label>Nombre <input id="cNombre" required></label>
+        <label>Celular (opcional) <input id="cCelular"></label>
+        <label>Correo (opcional) <input id="cCorreo"></label>
+        <button type="submit">Agregar</button>
+      </form>
+      <div class="tabla"><table><thead><tr><th>Id</th><th>Nombre</th><th>Celular</th><th>Correo</th><th>Estado</th><th></th></tr></thead><tbody id="tClientes"></tbody></table></div>
+    </div>
+
+    <!-- Categorías: GET, POST y DELETE /categorias/ -->
+    <div id="tab-categorias" class="tarjeta oculto">
+      <h2>Categorías</h2>
+      <form id="formCategoria" class="fila">
+        <label>Nombre <input id="catNombre" required></label>
+        <label>Descripción <input id="catDescripcion"></label>
+        <button type="submit">Agregar</button>
+      </form>
+      <p class="ayuda">Borrar solo lo puede hacer el Admin, y solo si la categoría no tiene productos. Para vaciar una categoría, mueve sus productos a otra (Admin o Editor).</p>
+      <div class="tabla"><table><thead><tr><th>Id</th><th>Nombre</th><th>Descripción</th><th>Productos</th><th>Mover sus productos a</th><th></th></tr></thead><tbody id="tCategorias"></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<script>
+// =====================================================================
+//  1. CONEXIÓN CON LA API
+//  Todo pasa por esta función: arma la petición, agrega el token y
+//  muestra el código HTTP y el mensaje que responde la API.
+// =====================================================================
+let token = null;   // el token JWT vive aquí, en memoria (se pierde al recargar)
+const valor = id => document.getElementById(id).value;   // lee lo que se escribió en un campo
+// Los errores ya se muestran en pantalla; esto evita que además salgan en la consola
+window.addEventListener("unhandledrejection", e => e.preventDefault());
+
+async function api(metodo, ruta, cuerpo) {
+  const url = document.getElementById("apiUrl").value.replace(/\/$/, "") + ruta;
+  const opciones = { method: metodo, headers: { "Content-Type": "application/json" } };
+  if (token) opciones.headers["Authorization"] = "Bearer " + token;   // igual que el botón Authorize de Swagger
+  if (cuerpo !== undefined) opciones.body = JSON.stringify(cuerpo);
+
+  let respuesta;
+  try {
+    respuesta = await fetch(url, opciones);
+  } catch (e) {
+    mostrar(false, 0, "No hay conexión con la API. ¿Está corriendo uvicorn en " + url.split("/").slice(0, 3).join("/") + "?");
+    throw e;
+  }
+  const datos = await respuesta.json().catch(() => null);
+
+  if (!respuesta.ok) {
+    mostrar(false, respuesta.status, textoDeError(datos));
+    if (respuesta.status === 401 && token) salir("Tu sesión venció o ya no es válida. Inicia sesión otra vez.");
+    throw new Error(respuesta.status);
+  }
+  return { status: respuesta.status, datos };
+}
+
+// FastAPI responde los errores en "detail": a veces texto, a veces una lista (errores 422 de Pydantic)
+function textoDeError(datos) {
+  if (!datos || !datos.detail) return "Error sin detalle";
+  if (typeof datos.detail === "string") return datos.detail;
+  return datos.detail.map(d => (d.loc ? d.loc[d.loc.length - 1] + ": " : "") + d.msg).join(" · ");
+}
+
+function mostrar(exito, status, texto) {
+  const caja = document.getElementById("mensaje");
+  caja.className = exito ? "exito" : "error";
+  caja.innerHTML = '<span class="codigo">' + (status || "—") + "</span>" + escapar(texto);
+}
+
+function escapar(t) {
+  return String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+// =====================================================================
+//  2. LOGIN Y SESIÓN
+// =====================================================================
+document.getElementById("formLogin").addEventListener("submit", async e => {
+  e.preventDefault();
+  const { status, datos } = await api("POST", "/auth/login", {
+    correo: valor("correo"),
+    contrasena: valor("contrasena")
+  });
+  token = datos.access_token;
+  // El token tiene 3 partes separadas por puntos; la de en medio (payload) se puede leer
+  const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+  document.getElementById("sesion").textContent = "Sesión: " + payload.correo;
+  mostrar(true, status, "Bienvenido, " + payload.correo);
+  cambiarVista(true);
+  abrirPestana("inventario");
+});
+
+// Botones de usuarios de prueba: llenan el formulario
+document.querySelectorAll("[data-correo]").forEach(b => b.addEventListener("click", () => {
+  document.getElementById("correo").value = b.dataset.correo;
+  document.getElementById("contrasena").value = "Password123!";
+}));
+
+function salir(texto) {
+  token = null;   // cerrar sesión aquí solo borra el token del navegador
+  cambiarVista(false);
+  if (texto) mostrar(false, 401, texto);
+}
+document.getElementById("btnSalir").addEventListener("click", () => { salir(); mostrar(true, "", "Sesión cerrada"); });
+
+function cambiarVista(conSesion) {
+  document.getElementById("vistaLogin").classList.toggle("oculto", conSesion);
+  document.getElementById("vistaPanel").classList.toggle("oculto", !conSesion);
+  document.getElementById("sesion").classList.toggle("oculto", !conSesion);
+  document.getElementById("btnSalir").classList.toggle("oculto", !conSesion);
+}
+
+// =====================================================================
+//  3. PESTAÑAS
+// =====================================================================
+const cargar = {
+  inventario: cargarInventario, movimiento: cargarCatalogosMovimiento, historial: cargarHistorial,
+  proveedores: cargarProveedores, clientes: cargarClientes, categorias: cargarCategorias
+};
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => abrirPestana(b.dataset.tab)));
+
+function abrirPestana(nombre) {
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("activa", b.dataset.tab === nombre));
+  Object.keys(cargar).forEach(t => document.getElementById("tab-" + t).classList.toggle("oculto", t !== nombre));
+  cargar[nombre]().catch(() => {});
+}
+
+// =====================================================================
+//  4. INVENTARIO · GET /almacen/despliegue
+// =====================================================================
+async function cargarInventario() {
+  const { datos } = await api("GET", "/almacen/despliegue");
+  const clase = { "En stock": "ok", "Stock bajo": "bajo", "Fuera de stock": "fuera" };
+  document.getElementById("tInventario").innerHTML = datos.map(p =>
+    "<tr><td>" + escapar(p.codigo) + "</td><td>" + escapar(p.producto) + "</td><td>" + escapar(p.categoria) +
+    "</td><td>" + p.stock_actual + '</td><td><span class="pill ' + clase[p.estado_stock] + '">' + escapar(p.estado_stock) + "</span></td></tr>"
+  ).join("");
+}
+
+// =====================================================================
+//  5. MOVIMIENTOS · POST /movimientos/  (proceso central)
+// =====================================================================
+async function cargarCatalogosMovimiento() {
+  const clientes = (await api("GET", "/clientes/")).datos;
+  const proveedores = (await api("GET", "/proveedores/")).datos;
+  document.getElementById("mCliente").innerHTML = clientes.map(c => '<option value="' + c.id_cliente + '">' + escapar(c.nombre) + "</option>").join("");
+  document.getElementById("mProveedor").innerHTML = proveedores.map(p => '<option value="' + p.id_proveedor + '">' + escapar(p.nombre) + "</option>").join("");
+}
+
+// Entrada pide proveedor; salida pide cliente
+document.getElementById("mTipo").addEventListener("change", e => {
+  const entrada = e.target.value === "Entrada";
+  document.getElementById("lblProveedor").classList.toggle("oculto", !entrada);
+  document.getElementById("lblCliente").classList.toggle("oculto", entrada);
+});
+
+document.getElementById("formMovimiento").addEventListener("submit", async e => {
+  e.preventDefault();
+  const tipo = document.getElementById("mTipo").value;
+  const cuerpo = {
+    tipo,
+    id_producto: Number(document.getElementById("mProducto").value),
+    cantidad: Number(document.getElementById("mCantidad").value),
+    descripcion: document.getElementById("mDescripcion").value || null
+  };
+  if (tipo === "Entrada") cuerpo.id_proveedor = Number(document.getElementById("mProveedor").value);
+  else cuerpo.id_cliente = Number(document.getElementById("mCliente").value);
+
+  const caja = document.getElementById("mResultado");
+  caja.classList.add("oculto");
+  const { status, datos } = await api("POST", "/movimientos/", cuerpo);
+  mostrar(true, status, "Movimiento #" + datos.id_movimiento + " registrado");
+  caja.innerHTML = "<b>" + escapar(datos.tipo) + "</b> de " + datos.cantidad + " · " + escapar(datos.producto) +
+    " · " + escapar(datos.cliente || datos.proveedor) + "<br>Stock: <b>" + datos.stock_anterior + " → " + datos.stock_actual +
+    "</b> · registró " + escapar(datos.usuario);
+  caja.classList.remove("oculto");
+});
+
+// =====================================================================
+//  6. HISTORIAL · GET /movimientos/?tipo=...
+// =====================================================================
+async function cargarHistorial() {
+  const tipo = document.getElementById("hTipo").value;
+  const { datos } = await api("GET", "/movimientos/" + (tipo ? "?tipo=" + tipo : ""));
+  document.getElementById("tHistorial").innerHTML = datos.map(m =>
+    "<tr><td>" + m.id_movimiento + "</td><td>" + escapar(m.fecha.replace("T", " ")) + "</td><td>" + escapar(m.tipo) +
+    "</td><td>" + escapar(m.codigo_producto + " " + m.producto) + "</td><td>" + m.cantidad + "</td><td>" +
+    escapar(m.proveedor || m.cliente) + "</td><td>" + escapar(m.usuario) + "</td></tr>"
+  ).join("");
+}
+
+// =====================================================================
+//  7. PROVEEDORES Y CLIENTES · GET, POST y DELETE (baja lógica)
+// =====================================================================
+function estado(activo) { return activo ? '<span class="pill ok">Activo</span>' : '<span class="pill baja">De baja</span>'; }
+function botonBaja(ruta, id, activo, recargar) {
+  return activo ? '<button class="peligro" type="button" onclick="darDeBaja(\'' + ruta + "'," + id + "," + recargar + ')">Dar de baja</button>' : "";
+}
+async function darDeBaja(ruta, id, recargar) {
+  const { status, datos } = await api("DELETE", ruta + id);
+  mostrar(true, status, datos.mensaje);
+  recargar();
+}
+
+async function cargarProveedores() {
+  const { datos } = await api("GET", "/proveedores/?incluir_inactivos=true");
+  document.getElementById("tProveedores").innerHTML = datos.map(p =>
+    "<tr><td>" + p.id_proveedor + "</td><td>" + escapar(p.nombre) + "</td><td>" + escapar(p.rfc) + "</td><td>" + escapar(p.celular) +
+    "</td><td>" + estado(p.activo) + "</td><td>" + botonBaja("/proveedores/", p.id_proveedor, p.activo, "cargarProveedores") + "</td></tr>"
+  ).join("");
+}
+document.getElementById("formProveedor").addEventListener("submit", async e => {
+  e.preventDefault();
+  const { status, datos } = await api("POST", "/proveedores/", {
+    nombre: valor("pNombre"), celular: valor("pCelular"), correo: valor("pCorreo"), rfc: valor("pRfc")
+  });
+  mostrar(true, status, "Proveedor creado con id " + datos.id_proveedor + " (RFC guardado: " + datos.rfc + ")");
+  e.target.reset();
+  cargarProveedores();
+});
+
+async function cargarClientes() {
+  const { datos } = await api("GET", "/clientes/?incluir_inactivos=true");
+  document.getElementById("tClientes").innerHTML = datos.map(c =>
+    "<tr><td>" + c.id_cliente + "</td><td>" + escapar(c.nombre) + "</td><td>" + escapar(c.celular || "—") + "</td><td>" + escapar(c.correo || "—") +
+    "</td><td>" + estado(c.activo) + "</td><td>" + botonBaja("/clientes/", c.id_cliente, c.activo, "cargarClientes") + "</td></tr>"
+  ).join("");
+}
+document.getElementById("formCliente").addEventListener("submit", async e => {
+  e.preventDefault();
+  const { status, datos } = await api("POST", "/clientes/", {
+    nombre: valor("cNombre"), celular: valor("cCelular") || null, correo: valor("cCorreo") || null
+  });
+  mostrar(true, status, "Cliente creado con id " + datos.id_cliente);
+  e.target.reset();
+  cargarClientes();
+});
+
+// =====================================================================
+//  8. CATEGORÍAS · GET, POST y DELETE (borrado real, solo Admin)
+// =====================================================================
+async function cargarCategorias() {
+  const { datos } = await api("GET", "/categorias/");
+  document.getElementById("tCategorias").innerHTML = datos.map(c => {
+    // Solo se ofrece mover si la categoría tiene productos; el destino es cualquier otra categoría
+    const destinos = datos.filter(d => d.id_categoria !== c.id_categoria)
+      .map(d => '<option value="' + d.id_categoria + '">' + escapar(d.nombre) + "</option>").join("");
+    const mover = c.total_productos > 0
+      ? '<select id="destino-' + c.id_categoria + '">' + destinos + '</select> <button class="sec" type="button" onclick="moverProductos(' + c.id_categoria + ')">Mover</button>'
+      : "—";
+    return "<tr><td>" + c.id_categoria + "</td><td>" + escapar(c.nombre) + "</td><td>" + escapar(c.descripcion || "—") + "</td><td>" + c.total_productos +
+      "</td><td>" + mover + '</td><td><button class="peligro" type="button" onclick="borrarCategoria(' + c.id_categoria + ')">Borrar</button></td></tr>';
+  }).join("");
+}
+
+// POST /categorias/{id}/mover-productos : pasa todos sus productos a la categoría elegida
+async function moverProductos(id) {
+  const destino = Number(document.getElementById("destino-" + id).value);
+  const { status, datos } = await api("POST", "/categorias/" + id + "/mover-productos", { id_categoria_destino: destino });
+  mostrar(true, status, datos.mensaje);
+  cargarCategorias();
+}
+async function borrarCategoria(id) {
+  const { status, datos } = await api("DELETE", "/categorias/" + id);
+  mostrar(true, status, datos.mensaje);
+  cargarCategorias();
+}
+document.getElementById("formCategoria").addEventListener("submit", async e => {
+  e.preventDefault();
+  const { status, datos } = await api("POST", "/categorias/", { nombre: valor("catNombre"), descripcion: valor("catDescripcion") || null });
+  mostrar(true, status, "Categoría '" + datos.nombre + "' creada con id " + datos.id_categoria);
+  e.target.reset();
+  cargarCategorias();
+});
+</script>
+</body>
+</html>

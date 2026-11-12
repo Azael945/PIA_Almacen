@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware 
+
 from modulos.autenticacion.rutas import router as autenticacion_router
 from modulos.almacen.rutas import router as almacen_router
 from modulos.usuarios.rutas import router as usuarios_router
@@ -9,6 +11,13 @@ app = FastAPI(
     title="API Almacen",
     description="Sistema de gestión de almacén",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(autenticacion_router)
