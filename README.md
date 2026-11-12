@@ -161,7 +161,22 @@ Debe terminar con `Application startup complete.` Deja esa terminal abierta. Par
 
 ---
 
-## 8. Problemas comunes
+## 8. Usar el frontend
+
+El proyecto incluye una página sencilla en `frontend/index.html` (HTML y JavaScript, sin librerías) que consume la misma API que Swagger.
+
+1. Deja corriendo la API (paso 6).
+2. Abre `frontend/index.html` con doble clic: se abre en tu navegador.
+3. Elige un usuario de prueba (o escribe correo y contraseña) y presiona **Entrar**.
+4. Usa las pestañas: Inventario, Registrar movimiento, Historial, Proveedores, Clientes y Categorías.
+
+Arriba de las pestañas aparece siempre el código HTTP y el mensaje que respondió la API (por ejemplo, **400** "Stock insuficiente" o **403** "Se requiere rol de Admin").
+
+> Si tu API no está en `http://127.0.0.1:8000`, cambia la dirección en el campo **Dirección de la API**. La API permite estas llamadas gracias a la configuración de CORS en `main.py`.
+
+---
+
+## 9. Problemas comunes
 
 | Si ves | Haz |
 |---|---|
@@ -172,16 +187,17 @@ Debe terminar con `Application startup complete.` Deja esa terminal abierta. Par
 | `Unknown database 'almacen'` | Falta el paso 5.1 |
 | 401 después de un rato | El token venció: login y Authorize otra vez |
 | En Workbench el rayo está desactivado | La pestaña no está conectada: abre primero tu conexión |
+| El frontend dice "No hay conexión con la API" | La API no está corriendo, o la dirección del campo **Dirección de la API** no es la correcta |
 
 ---
 
-## 9. Estructura
+## 10. Estructura
 
 ```
 main.py                    Punto de entrada: registra los routers
 database/
   almacen.sql              Crea las 8 tablas
-  datos_prueba_exposicion.sql  Datos de prueba (se puede repetir)
+  datos_prueba.sql         Datos de prueba (se puede repetir)
   conexion.py              Conexión a MySQL (lee el .env)
 modulos/
   autenticacion/           Login, tokens JWT y contraseñas
@@ -189,6 +205,8 @@ modulos/
   usuarios/                CRUD de usuarios (solo Admin)
   configuracion/           CRUD de proveedores, clientes y categorías
   movimientos/             Entradas, salidas e historial
+frontend/
+  index.html               Página para probar la API desde el navegador
 pyproject.toml, poetry.lock  Dependencias (Poetry)
 .env.example               Plantilla de variables (sin secretos)
 ```
